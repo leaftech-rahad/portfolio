@@ -375,7 +375,40 @@ Mutation.js >>
 
 
 
+Post.js >>
 
+
+
+            exports.Post = {
+            user: (parent, args, context) => {
+                let { username } = parent;
+                if (username === null) {
+                username = "undefined";
+                }
+                return context.prisma.user.findUnique({
+                where: {
+                    username: username,
+                },
+                });
+            },
+            };
+
+
+
+User.js >>
+
+
+
+            exports.User = {
+            post: (parent, arsg, context) => {
+                const { username } = parent;
+                return context.prisma.post.findMany({
+                where: {
+                    username: username,
+                },
+                });
+            },
+            };
 
 
 
