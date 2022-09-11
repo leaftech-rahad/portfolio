@@ -1,0 +1,381 @@
+ 
+    npx express-generator .
+
+    npm i -D prisma typescript ts-node @types/node nodemon
+
+    cteate tsconfig.json with
+
+        {
+        "compilerOptions":{
+        "sourceMap":true,
+        "outDir":"dist",
+        "strict":true,
+        "lib":["esnext"],
+        "esModuleInterop":true,
+            },
+            "include": ["src/**/*"]
+        }
+
+    npx prisma init --datasource-provider postgresql
+
+    ## see more genrators for prisma generator
+
+    install prisma extenction
+
+    configure .env file for database connection
+
+        DATABASE_URL="postgresql://rahad:password@localhost:5432/prismadb?schema=public&connection_limit=5&pool_timeout=5"
+
+    define your schena in schema.prisma file
+        example:
+
+                        
+                        
+            model User {
+            ID        String   @id @default(uuid())
+            name      String
+            email     String   @unique
+            username  String   @unique
+            password  String
+            phone     String
+            address   String
+            role      Role     @default(Member)
+            post      Post[]   @relation("writtenPost")
+            createdAt DateTime @default(now())
+            updatedAt DateTime @updatedAt
+
+            @@index([username])
+            }
+
+            enum Role {
+            Admin
+            Member
+            Student
+            }
+
+            model Post {
+            ID        String   @id @default(uuid())
+            username  String?
+            author    User?    @relation("writtenPost", references: [username], fields: [username])
+            title     String
+            content   String
+            createdAt DateTime @default(now())
+            updatedAt DateTime @updatedAt
+            }
+
+
+
+
+    npx prisma migrate dev --name initializing_db
+
+    npm i @prisma/clint
+
+    To manually regenerate your clint 
+        npx prisma generate
+
+    create seed.js file ./prisma/seed.js and input
+
+            const { PrismaClient } = require("@prisma/client");
+            const prisma = new PrismaClient();
+
+            const data = [
+            {
+                name: "Alice",
+                email: "alice@prisma.io",
+                password: "password",
+                username: "Alice",
+                phone: "11111111111",
+                address: "savar",
+                role: "Admin",
+                post: {
+                create: [
+                    {
+                    title: "First Post",
+                    content: "First Post Content",
+                    },
+                    {
+                    title: "Second Post",
+                    content: "Second Post Content",
+                    },
+                ],
+                },
+            },
+            {
+                name: "Nilu",
+                email: "nilu@prisma.io",
+                password: "password",
+                username: "Nilu",
+                phone: "99999999999",
+                address: "savar",
+                role: "Member",
+                post: {
+                create: [
+                    {
+                    title: "Third Post",
+                    content: "Third Post Content",
+                    },
+                ],
+                },
+            },
+            {
+                name: "Mahmoud",
+                email: "mahmoud@prisma.io",
+                password: "password",
+                username: "Mahmoud",
+                phone: "88888888888",
+                address: "dhaka",
+                role: "Student",
+                post: {
+                create: [
+                    {
+                    title: "Fourth Post",
+                    content: "Fourth Post Content",
+                    },
+                ],
+                },
+            },
+            ];
+
+            async function main() {
+            await prisma.post.deleteMany({});
+            await prisma.user.deleteMany({});
+            console.log(`Start seeding...`);
+            for (const u of data) {
+                const user = await prisma.user.create({
+                data: u,
+                });
+                console.log(`Created user with id: ${user.ID}`);
+            }
+            console.log(`Seeding finished.`);
+            }
+            main()
+            .then(async () => {
+                await prisma.$disconnect();
+            })
+            .catch(async (e) => {
+                console.error(e);
+                await prisma.$disconnect();
+                process.exit(1);
+            });
+
+    write this to package.json
+
+        "prisma": {
+        "seed": "node prisma/seed.js"
+        },
+
+    Database seeding happens in two ways with Prisma: manually with 
+        npx prisma db seed 
+
+    and automatically in 
+
+        npx prisma migrate dev 
+    and 
+        npx prisma migrate reset.
+    
+    create context.js file in prisma folder and input
+
+        const { PrismaClient } = require("@prisma/client");
+        const prisma = new PrismaClient();
+
+        const context = {
+        prisma: prisma,
+        };
+
+        module.exports = {
+        context,
+        };
+
+-----------------------------------------------------------------------
+
+create graphql folder
+
+typeDefs.js >>
+
+
+            const { DateTimeResolver } = require("graphql-scalars");
+
+
+            const typeDefs = `
+            scalar DateTime
+
+            type User{
+                ID:ID!
+                name:String!
+                email:String!
+                password:String!
+                username:String
+                phone:String
+                address:String
+                role:String
+                post:[Post]
+                createdAt:DateTime!
+                updatedAt:DateTime!
+            }
+
+            type Post{
+                ID:ID!
+                username:String
+                title:String!
+                content:String!
+                createdAt:DateTime!
+                updatedAt:DateTime!
+                user:User
+            }
+
+            type Query{
+                allUsers:[User!]!
+                findUser(input: findUser):User
+                allPosts:[Post!]!
+                findPost(input: findPost):[Post!]!
+            }
+
+            input findPost{
+                title:String
+                username:String
+            }
+
+            input findUser{
+                username:String
+                email:String
+            }
+
+            type Mutation{
+                createUser(input:createUser):User
+                createPost(input:createPost):Post
+                deleteUser(input:deleteUser):Boolean
+                deletePost(input:deletePost):Boolean
+            }
+
+            input createUser{
+                name:String!
+                email:String!
+                username:String!
+                phone:String
+                address:String
+                role:String
+                password:String!
+            }
+
+            input createPost{
+                title:String!
+                content:String!
+                username:String!
+            }
+
+            input deleteUser{
+                username:String
+                
+            }
+
+            input deletePost{
+                ID:ID
+                username:String
+            }
+            `;
+
+            module.exports = { typeDefs };
+
+
+make resolvers folder
+
+
+Query.js  >>
+
+            exports.Query = {
+            allUsers: (parent, args, context) => {
+                return context.prisma.user.findMany();
+            },
+            findUser: (parent, { input }, context) => {
+                const { username, email } = input;
+                return context.prisma.user.findUnique({
+                where: {
+                    username: username,
+                    email: email,
+                },
+                });
+            },
+            allPosts: (parent, args, context) => {
+                return context.prisma.post.findMany();
+            },
+            findPost: (parent, { input }, context) => {
+                const { title, username } = input;
+                return context.prisma.post.findMany({
+                where: {
+                    username: username,
+                    title: title,
+                },
+                });
+            },
+            };
+
+
+Mutation.js >>
+
+            exports.Mutation = {
+            createUser: (parent, { input }, context) => {
+                const { name, email, username, phone, address, role, password } = input;
+                return context.prisma.user.create({
+                data: {
+                    name: name,
+                    email: email,
+                    username: username,
+                    phone: phone,
+                    address: address,
+                    role: role,
+                    password: password,
+                },
+                });
+            },
+            createPost: (arent, { input }, context) => {
+                const { title, username, content } = input;
+                return context.prisma.post.create({
+                data: {
+                    title: title,
+                    content: content,
+                    username: username,
+                },
+                });
+            },
+            deleteUser: async (parent, { input }, context) => {
+                const { username } = input;
+                console.log(username);
+                await context.prisma.user.update({
+                where: {
+                    username: username,
+                },
+                data: {
+                    post: {
+                    set: [],
+                    },
+                },
+                include: {
+                    post: true,
+                },
+                });
+
+                await context.prisma.user.delete({
+                where: {
+                    username: username,
+                },
+                });
+                return true;
+            },
+            deletePost: async (parent, { input }, context) => {
+                const { ID, username } = input;
+                await context.prisma.post.deleteMany({
+                where: {
+                    ID: ID,
+                    username: username,
+                },
+                });
+                return true;
+            },
+            };
+
+
+
+
+
+
+

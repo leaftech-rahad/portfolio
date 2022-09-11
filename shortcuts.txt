@@ -1,0 +1,10 @@
+npm i nodemon prisma -D
+
+npm install apollo-server-express apollo-server-core express graphql
+
+npm i --save express express-graphql graphql graphql-scalars @graphql-tools/schema cors lodash bcrypt express-session @prisma/client passport passport-local 
+
+
+
+
+

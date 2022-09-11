@@ -1,0 +1,36 @@
+{
+  "name": "portfolio",
+  "version": "1.0.0",
+  "description": "portfolio with one to one chat and code bits",
+  "main": "server.js",
+  "scripts": {
+    "test": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leaftech-rahad/portfolio.git"
+  },
+  "keywords": [
+    "portfolio"
+  ],
+  "author": "Faisal Ahamed Rahad",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/leaftech-rahad/portfolio/issues"
+  },
+  "homepage": "https://github.com/leaftech-rahad/portfolio#readme",
+  "dependencies": {
+    "@prisma/client": "^4.3.1",
+    "apollo-server-core": "^3.10.2",
+    "apollo-server-express": "^3.10.2",
+    "express": "^4.18.1",
+    "graphql": "^16.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19",
+    "prisma": "^4.3.1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
