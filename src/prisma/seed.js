@@ -1,11 +1,12 @@
-const { PrismaClient } = require("@prisma/client");
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import { encrypt } from "../graphql/resolvers/bcrytp.js";
 
 const data = [
   {
     name: "Alice",
     email: "alice@prisma.io",
-    password: "password",
+    password: (await encrypt("@Password123")).toString(),
     username: "Alice",
     phone: "11111111111",
     address: "savar",
@@ -15,10 +16,12 @@ const data = [
         {
           title: "First Post",
           content: "First Post Content",
+          username: "Alice",
         },
         {
           title: "Second Post",
           content: "Second Post Content",
+          username: "Alice",
         },
       ],
     },
@@ -26,7 +29,7 @@ const data = [
   {
     name: "Nilu",
     email: "nilu@prisma.io",
-    password: "password",
+    password: (await encrypt("@Password123")).toString(),
     username: "Nilu",
     phone: "99999999999",
     address: "savar",
@@ -36,6 +39,7 @@ const data = [
         {
           title: "Third Post",
           content: "Third Post Content",
+          username: "Nilu",
         },
       ],
     },
@@ -43,7 +47,7 @@ const data = [
   {
     name: "Mahmoud",
     email: "mahmoud@prisma.io",
-    password: "password",
+    password: (await encrypt("@Password123")).toString(),
     username: "Mahmoud",
     phone: "88888888888",
     address: "dhaka",
@@ -53,6 +57,7 @@ const data = [
         {
           title: "Fourth Post",
           content: "Fourth Post Content",
+          username: "Mahmoud",
         },
       ],
     },

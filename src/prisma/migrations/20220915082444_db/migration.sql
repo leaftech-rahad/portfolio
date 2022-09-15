@@ -20,7 +20,8 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Post" (
     "ID" TEXT NOT NULL,
-    "username" TEXT,
+    "username" TEXT NOT NULL,
+    "authorID" TEXT,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -39,4 +40,4 @@ CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 CREATE INDEX "User_username_idx" ON "User"("username");
 
 -- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_username_fkey" FOREIGN KEY ("username") REFERENCES "User"("username") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorID_fkey" FOREIGN KEY ("authorID") REFERENCES "User"("ID") ON DELETE SET NULL ON UPDATE CASCADE;

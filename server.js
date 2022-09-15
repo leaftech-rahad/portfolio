@@ -1,27 +1,74 @@
-const { ApolloServer } = require("apollo-server-express");
-const {
+import * as dotenv from "dotenv";
+dotenv.config();
+import { ApolloServer } from "apollo-server-express";
+import {
   ApolloServerPluginDrainHttpServer,
   ApolloServerPluginLandingPageLocalDefault,
-} = require("apollo-server-core");
-const express = require("express");
-const http = require("http");
+} from "apollo-server-core";
+import express from "express";
+import { createServer } from "http";
+import session from "express-session";
+import Redis from "connect-redis";
+import { createClient } from "redis";
+import { schema } from "./src/graphql/schema.js";
 
-const { context } = require("./prisma/context");
-const { schema } = require("./graphql/schema");
+let RedisStore = Redis(session);
 
-const start = async function startApolloServer(typeDefs, resolvers) {
+(async () => {
   // Required logic for integrating with Express
+
   const app = express();
+
+  app.disable("x-powered-by");
+
+  //ENV variables
+
+  const { NODE_ENV, APP_PORT, SESS_NAME, SESS_SECRET, SESS_LIFETIME } =
+    process.env;
+
+  const IN_PROD = NODE_ENV === "production";
+
+  //session
+
+  let redisClient = createClient({ legacyMode: true });
+  redisClient.connect().catch(console.error);
+
+  app.use(
+    session({
+      store: new RedisStore({ client: redisClient }),
+      name: SESS_NAME,
+      secret: SESS_SECRET,
+      resave: true,
+      rolling: true,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: parseInt(SESS_LIFETIME),
+        sameSite: true,
+        secure: IN_PROD,
+      },
+    })
+  );
+
   // Our httpServer handles incoming requests to our Express app.
   // Below, we tell Apollo Server to "drain" this httpServer,
   // enabling our servers to shut down gracefully.
-  const httpServer = http.createServer(app);
+  const httpServer = createServer(app);
+
+  console.log(NODE_ENV);
 
   // Same ApolloServer initialization as before, plus the drain plugin
   // for our httpServer.
   const server = new ApolloServer({
     schema: schema,
-    context: context,
+    context: ({ req, res }) => ({ req, res }),
+    playground: IN_PROD
+      ? false
+      : {
+          settings: {
+            "request.credentials": "include",
+          },
+        },
+
     csrfPrevention: true,
     cache: "bounded",
     plugins: [
@@ -39,17 +86,18 @@ const start = async function startApolloServer(typeDefs, resolvers) {
     // server root. However, *other* Apollo Server packages host it at
     // /graphql. Optionally provide this to match apollo-server.
     path: "/",
+    cors: false,
   });
 
   // Modified server startup
-  await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
-  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
-};
+  await new Promise((resolve) => httpServer.listen(APP_PORT, resolve));
+  console.log(
+    `🚀 Server ready at http://localhost:${APP_PORT}${server.graphqlPath}`
+  );
+})();
 
-start();
-
-//----------------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------
 //
 // const { ApolloServer } = require("apollo-server-express");
 // const {
@@ -83,4 +131,4 @@ start();
 // start();
 
 // new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
-// console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
+// console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
